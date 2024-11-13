@@ -5,6 +5,7 @@ function getClientID(displayPhoneNumber) {
         const query = 'SELECT Client_ID FROM Client WHERE Contact_Number LIKE CONCAT("+", ?)';
         const connection = getConnection();
         console.log(`displayPhoneNumber"${displayPhoneNumber}`);
+        console.log(`displayPhoneNumber"${displayPhoneNumber}`);
         connection.execute(query, [displayPhoneNumber], (err, results) => {
             if (err) {
                 console.error('error running query:', err);
@@ -34,6 +35,12 @@ function getWelcomeMessage(clientId) {
 async function getMainMenu(clientId, parentMenuID) {
     return new Promise(async(resolve, reject) => {
         const query = `
+        SELECT 
+            Client_ID as CLIENT_ID,
+            Menu_ID as MENU_ID,
+            Menu_Name AS MENU_NAME, 
+            Header_Message AS HEADER_MESSAGE,
+            Action as ACTION
         SELECT 
             Client_ID as CLIENT_ID,
             Menu_ID as MENU_ID,
