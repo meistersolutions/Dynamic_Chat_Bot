@@ -84,6 +84,12 @@ async function sendRadioButtonMessage(to, headerText, options) {
         'Authorization': `Bearer ${process.env.WHATSAPP_TOKEN}`, // Use the correct token
         'Content-Type': 'application/json'
     };
+
+    // Function to truncate title to 24 characters
+    const truncateTitle = (title) => {
+        return title.length > 24 ? title.substring(0, 24) : title;
+    };
+
     const data = {
         messaging_product: 'whatsapp',
         to: to,
@@ -103,7 +109,7 @@ async function sendRadioButtonMessage(to, headerText, options) {
                     title: 'Options',
                     rows: options.map((option) => ({
                         id: option.id, // Option IDs should be unique and consistent
-                        title: option.title
+                        title: truncateTitle(option.title) // Truncate title if necessary
                     }))
                 }]
             }
@@ -117,8 +123,6 @@ async function sendRadioButtonMessage(to, headerText, options) {
         console.error('Error sending radio button message:', error.response ? error.response.data : error.message);
     }
 }
-
-
 
 // Exporting functions
 module.exports = {

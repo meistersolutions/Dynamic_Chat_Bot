@@ -40,3 +40,60 @@ INSERT INTO Menu (Menu_ID, Client_ID, Language, Menu_Name, Display_Order, Parent
 (28, 1, 'ENG', 'Finalize Tele Appointment', 1, 27, '', 'Your gmeet link is given below'),
 (29, 1, 'ENG', 'Enter Appointment ID for Reschedule', 1, 3, '', 'Your appointment has been rescheduled'),
 (30, 1, 'ENG', 'Enter Appointment ID for Cancel', 1, 4, '', 'Your appointment has been cancelled');
+
+
+
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'FINALIZE:MESSAGE TEMPLATE NAME' WHERE (`Menu_ID` = '10');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'POC:DEPARTMENT_ID' WHERE (`Menu_ID` = '12');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'CAPTURE_USER_INPUT:NoValidation' WHERE (`Menu_ID` = '15');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'CAPTURE_USER_INPUT:emailValidation' WHERE (`Menu_ID` = '16');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'CAPTURE_USER_INPUT:NumberValidation' WHERE (`Menu_ID` = '17');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'FINALIZE:MESSAGE TEMPLATE NAME' WHERE (`Menu_ID` = '19');
+
+DELETE FROM `chatbotdynamic`.`menu` WHERE (`Menu_ID` = '15');
+DELETE FROM `chatbotdynamic`.`menu` WHERE (`Menu_ID` = '16');
+DELETE FROM `chatbotdynamic`.`menu` WHERE (`Menu_ID` = '17');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '15', `Parent_Menu_ID` = '14' WHERE (`Menu_ID` = '18');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '16', `Parent_Menu_ID` = '15' WHERE (`Menu_ID` = '19');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '17' WHERE (`Menu_ID` = '20');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '18' WHERE (`Menu_ID` = '21');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '19' WHERE (`Menu_ID` = '22');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '20' WHERE (`Menu_ID` = '23');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '21' WHERE (`Menu_ID` = '24');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '22' WHERE (`Menu_ID` = '25');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '23' WHERE (`Menu_ID` = '26');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '24' WHERE (`Menu_ID` = '27');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '25' WHERE (`Menu_ID` = '28');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '26' WHERE (`Menu_ID` = '29');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '27' WHERE (`Menu_ID` = '30');
+
+UPDATE menu
+SET CLIENT_ID = 1,
+    LANGUAGE = 'ENG',
+    MENU_NAME = 'Confirm Direct Appointment',
+    DISPLAY_ORDER = 1,
+    PARENT_MENU_ID = 14,
+    ACTION = 'CONFIRM:APPOINTMENT_DETAILS',
+    HEADER_MESSAGE = 'Please confirm your details.'
+WHERE MENU_ID = 15;
+
+UPDATE menu
+SET CLIENT_ID = 1,
+    LANGUAGE = 'ENG',
+    MENU_NAME = 'Finalize Direct Appointment',
+    DISPLAY_ORDER = 1,
+    PARENT_MENU_ID = 15,
+    ACTION = 'FINALIZE:UPDATE_STATUS',
+    HEADER_MESSAGE = 'Appointment confirmed. ID: {ID}'
+WHERE MENU_ID = 16;
+
+UPDATE `chatbotdynamic`.`menu` SET `Parent_Menu_ID` = '17' WHERE (`Menu_ID` = '18');
+UPDATE `chatbotdynamic`.`menu` SET `Parent_Menu_ID` = '18' WHERE (`Menu_ID` = '19');
+UPDATE `chatbotdynamic`.`menu` SET `Parent_Menu_ID` = '19' WHERE (`Menu_ID` = '20');
+UPDATE `chatbotdynamic`.`menu` SET `Parent_Menu_ID` = '20' WHERE (`Menu_ID` = '21');
+UPDATE `chatbotdynamic`.`menu` SET `Parent_Menu_ID` = '21' WHERE (`Menu_ID` = '22');
+UPDATE `chatbotdynamic`.`menu` SET `Parent_Menu_ID` = '22' WHERE (`Menu_ID` = '23');
+UPDATE `chatbotdynamic`.`menu` SET `Parent_Menu_ID` = '23' WHERE (`Menu_ID` = '24');
+UPDATE `chatbotdynamic`.`menu` SET `Parent_Menu_ID` = '24' WHERE (`Menu_ID` = '25');
+
+

@@ -24,4 +24,4 @@ VALUES
 INSERT INTO List (Client_ID, Key_name, Lang, Value_name, Display_Order)
 VALUES (1, 'GREETINGS','ENG','Welcome_Message',1);
 
-UPDATE `chatbot`.`list` SET `Value_name` = 'Welcome to Miot Hospital😊' WHERE (`Item_ID` = '7');
+UPDATE `chatbotdynamic`.`list` SET `Value_name` = 'Welcome to Miot Hospital😊' WHERE (`Item_ID` = '7');
