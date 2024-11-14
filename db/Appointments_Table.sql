@@ -15,6 +15,6 @@ CREATE TABLE Appointments (
     FOREIGN KEY (POC_ID) REFERENCES POC(POC_ID)
 );
 
-
+truncate table appointments;
 drop table appointments;
 use chatbotdynamic;

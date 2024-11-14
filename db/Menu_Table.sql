@@ -96,4 +96,21 @@ UPDATE `chatbotdynamic`.`menu` SET `Parent_Menu_ID` = '22' WHERE (`Menu_ID` = '2
 UPDATE `chatbotdynamic`.`menu` SET `Parent_Menu_ID` = '23' WHERE (`Menu_ID` = '24');
 UPDATE `chatbotdynamic`.`menu` SET `Parent_Menu_ID` = '24' WHERE (`Menu_ID` = '25');
 
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'LIST~EMERGENCY_REASON' WHERE (`Menu_ID` = '8');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'FINALIZE~MESSAGE TEMPLATE NAME' WHERE (`Menu_ID` = '10');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Department~LIST~DEPARTMENT' WHERE (`Menu_ID` = '11');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'POC_name~POC~DEPARTMENT_ID' WHERE (`Menu_ID` = '12');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'CONFIRM~APPOINTMENT_DETAILS' WHERE (`Menu_ID` = '15');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'FINALIZE~UPDATE_STATUS' WHERE (`Menu_ID` = '16');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Date~FETCH_AVAILABLE_DATES_DIRECT' WHERE (`Menu_ID` = '13');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Time~FETCH_AVAILABLE_TIMES_DIRECT' WHERE (`Menu_ID` = '14');
+
+
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Appointment_Type~LIST~DEPARTMENT' WHERE (`Menu_ID` = '11');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Department~POC~DEPARTMENT_ID' WHERE (`Menu_ID` = '12');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Poc_name~FETCH_AVAILABLE_DATES_DIRECT' WHERE (`Menu_ID` = '13');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Appointment_Date~FETCH_AVAILABLE_TIMES_DIRECT' WHERE (`Menu_ID` = '14');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Appointment_Time~CONFIRM' WHERE (`Menu_ID` = '15');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Confirm_Status~FINALIZE' WHERE (`Menu_ID` = '16');
+UPDATE `chatbotdynamic`.`menu` SET `Header_Message` = 'Appointment confirmed.Your Appointment ID: ${Appointment_ID}' WHERE (`Menu_ID` = '16');
 
