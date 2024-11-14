@@ -113,3 +113,43 @@ UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Appointment_Date~FETCH_AVAILABLE_
 UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Appointment_Time~CONFIRM' WHERE (`Menu_ID` = '15');
 UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Confirm_Status~FINALIZE' WHERE (`Menu_ID` = '16');
 UPDATE `chatbotdynamic`.`menu` SET `Header_Message` = 'Appointment confirmed.Your Appointment ID: [Appointment_ID]' WHERE (`Menu_ID` = '16');
+
+
+UPDATE `chatbotdynamic`.`menu` SET `Menu_Name` = 'Show Emergency Reasons List', `Action` = 'Appointment_Type~LIST~EMERGENCY_REASON', `Header_Message` = 'Select the Emergency Reason' WHERE (`Menu_ID` = '7');
+DELETE FROM `chatbotdynamic`.`menu` WHERE (`Menu_ID` = '8');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '8', `Parent_Menu_ID` = '7' WHERE (`Menu_ID` = '9');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '9', `Parent_Menu_ID` = '8' WHERE (`Menu_ID` = '10');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '10' WHERE (`Menu_ID` = '11');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '11', `Parent_Menu_ID` = '10' WHERE (`Menu_ID` = '12');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '12', `Parent_Menu_ID` = '11' WHERE (`Menu_ID` = '13');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '13', `Parent_Menu_ID` = '12' WHERE (`Menu_ID` = '14');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '14', `Parent_Menu_ID` = '13' WHERE (`Menu_ID` = '15');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '15', `Parent_Menu_ID` = '14' WHERE (`Menu_ID` = '16');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '16' WHERE (`Menu_ID` = '17');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '17', `Parent_Menu_ID` = '16' WHERE (`Menu_ID` = '18');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '18', `Parent_Menu_ID` = '17' WHERE (`Menu_ID` = '19');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '19', `Parent_Menu_ID` = '18' WHERE (`Menu_ID` = '20');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '20', `Parent_Menu_ID` = '19' WHERE (`Menu_ID` = '21');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '21', `Parent_Menu_ID` = '20' WHERE (`Menu_ID` = '22');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '22', `Parent_Menu_ID` = '21' WHERE (`Menu_ID` = '23');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '23', `Parent_Menu_ID` = '22' WHERE (`Menu_ID` = '24');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '24', `Parent_Menu_ID` = '23' WHERE (`Menu_ID` = '25');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '25', `Parent_Menu_ID` = '2' WHERE (`Menu_ID` = '26');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '26', `Parent_Menu_ID` = '3' WHERE (`Menu_ID` = '27');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Emergency_Reason~CONFIRM_EMERGENCY' WHERE (`Menu_ID` = '8');
+UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Confirm_Status~FINALIZE_EMERGENCY' WHERE (`Menu_ID` = '9');
+
+-- TELE
+UPDATE `chatbotdynamic`.`menu` SET `Menu_Name` = 'Select Department Tele', `Action` = 'Appointment_Type~LIST~DEPARTMENT', `Header_Message` = 'Select a department' WHERE (`Menu_ID` = '16');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_Name` = 'Select Doctor Tele', `Action` = 'Department~POC~DEPARTMENT_ID', `Header_Message` = 'Select a doctor' WHERE (`Menu_ID` = '17');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_Name` = 'Select Date Tele', `Action` = 'Poc_name~FETCH_AVAILABLE_DATES_DIRECT', `Header_Message` = 'Select a date' WHERE (`Menu_ID` = '18');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_Name` = 'Select Time Tele', `Action` = 'Appointment_Date~FETCH_AVAILABLE_TIMES_DIRECT', `Header_Message` = 'Select a time' WHERE (`Menu_ID` = '19');
+DELETE FROM `chatbotdynamic`.`menu` WHERE (`Menu_ID` = '20');
+DELETE FROM `chatbotdynamic`.`menu` WHERE (`Menu_ID` = '21');
+DELETE FROM `chatbotdynamic`.`menu` WHERE (`Menu_ID` = '22');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '20', `Parent_Menu_ID` = '19', `Action` = 'Appointment_Time~CONFIRM' WHERE (`Menu_ID` = '23');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '21', `Parent_Menu_ID` = '20', `Action` = 'Confirm_Status~FINALIZE_TELE' WHERE (`Menu_ID` = '24');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '22' WHERE (`Menu_ID` = '25');
+UPDATE `chatbotdynamic`.`menu` SET `Menu_ID` = '23' WHERE (`Menu_ID` = '26');
+
+

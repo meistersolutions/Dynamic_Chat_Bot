@@ -306,4 +306,44 @@ async function updateAvailableSlots(dynamicVariables) {
     await connection.execute(query, [doctorId, date, time]);
 }
 
-module.exports = { insertAppointment, updateAppointment, updateJsonData, updateAvailableSlots, insertUserData, getUserData, updateUserField, getClientID, getWelcomeMessage, getMainMenu, getFromList, getPocFromPoc, getAvailableDates, getAvailableTimes };
+
+
+
+function getTemplateMessage(clientId, templateName) {
+    return new Promise((resolve, reject) => {
+        // Fetch the template text based on CLIENT_ID and TEMPLATE_NAME
+        const query = `SELECT TEMPLATE_TEXT FROM Templates WHERE CLIENT_ID = ? AND TEMPLATE_NAME = ?`;
+        const connection = getConnection();
+        connection.execute(query, [clientId, templateName], (err, rows) => {
+            if (err) {
+                reject(err); // Reject the Promise if there is an error
+            } else {
+                if (rows.length > 0) {
+                    resolve(rows[0].TEMPLATE_TEXT); // Resolve the Promise with the template text
+                } else {
+                    reject(new Error(`Template for ${templateName} not found for client ${clientId}`)); // Reject the Promise if the template is not found
+                }
+            }
+        });
+    });
+}
+
+
+async function getMeetLink(pocId) {
+    return new Promise((resolve, reject) => {
+        const query = 'SELECT Meet_Link FROM POC WHERE POC_ID = ?';
+        const connection = getConnection();
+
+        connection.execute(query, [pocId], (err, results) => {
+            if (err) {
+                console.error('Error fetching Meet_Link:', err.message);
+                reject(err);
+            } else {
+                // Check if results contain any rows, if not, resolve with null
+                resolve(results.length > 0 ? results[0].Meet_Link : null);
+            }
+        });
+    });
+}
+
+module.exports = { getMeetLink, getTemplateMessage, insertAppointment, updateAppointment, updateJsonData, updateAvailableSlots, insertUserData, getUserData, updateUserField, getClientID, getWelcomeMessage, getMainMenu, getFromList, getPocFromPoc, getAvailableDates, getAvailableTimes };

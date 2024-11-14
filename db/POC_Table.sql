@@ -16,3 +16,8 @@ VALUES
 (1, 1, 'Dr. Harry Smith', 'Cardiology', '+917299817996', 'harishradhakrishnan2001@gmail.com'),
 (1, 2, 'Dr. Preet Jones', 'Orthopedics', '+919094995418', 'preethivijay0706@gmail.com'),
 (1, 3, 'Dr. Praggy Davis', 'Pediatrics', '+919003060876', 'harishrk2101@gmail.com');
+
+alter table POC add column Meet_Link varchar(100);
+UPDATE `chatbotdynamic`.`poc` SET `Meet_Link` = 'https://meet.google.com/fqa-ibje-mpn' WHERE (`POC_ID` = '1');
+UPDATE `chatbotdynamic`.`poc` SET `Meet_Link` = 'https://meet.google.com/fqa-ibje-mpn' WHERE (`POC_ID` = '2');
+UPDATE `chatbotdynamic`.`poc` SET `Meet_Link` = 'https://meet.google.com/fqa-ibje-mpn' WHERE (`POC_ID` = '3');

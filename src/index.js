@@ -1,7 +1,7 @@
 // index.js
 const express = require('express');
 const dotenv = require('dotenv');
-const { insertAppointment, updateAppointment, updateJsonData, updateAvailableSlots, getClientID, getWelcomeMessage, getMainMenu, getFromList, insertUserData, getUserData, updateUserField, getPocFromPoc, getAvailableDates, getAvailableTimes } = require('./dbController');
+const { getMeetLink, getTemplateMessage, insertAppointment, updateAppointment, updateJsonData, updateAvailableSlots, getClientID, getWelcomeMessage, getMainMenu, getFromList, insertUserData, getUserData, updateUserField, getPocFromPoc, getAvailableDates, getAvailableTimes } = require('./dbController');
 const { connectDB } = require('./db');
 const { sendWhatsAppMessage, sendInteractiveMessage, sendRadioButtonMessage } = require('./utils');
 const { isValidEmail, isValidPhoneNumber } = require('./validate');
@@ -17,6 +17,7 @@ app.get('/', (req, res) => {
 });
 
 const sessionMap = {};
+let userData;
 
 app.get('/webhook', (req, res) => {
     const VERIFY_TOKEN = process.env.VERIFY_TOKEN || 'your_verify_token';
@@ -62,7 +63,7 @@ app.post('/webhook', async(req, res) => {
                 const clientId = await getClientID(displayPhoneNumber);
 
                 // Check user status (new or returning)
-                let userData = await getUserData(from);
+                userData = await getUserData(from);
 
                 if (userData) {
                     // User exists - check for missing fields and prompt accordingly
@@ -159,11 +160,6 @@ app.post('/webhook', async(req, res) => {
                             // Extract MENU_NAME items for interactive message
                             const menuNames = actionMenuNames.map(item => ({ id: item.CLIENT_ID + '~' + item.MENU_ID + '~' + item.ITEM_ID, title: item.MENU_NAME }));
                             await sendRadioButtonMessage(from, headerMessage, menuNames);
-                        } else {
-                            let appointment_id = sessionMap[from];
-                            // Replace the placeholder with the actual value
-                            headerMessage = headerMessage.replace("[Appointment_ID]", appointment_id);
-                            await sendWhatsAppMessage(from, headerMessage);
                         }
                     } else {
 
@@ -196,12 +192,12 @@ async function handleAction(iAction, iClientId, iMenuId, iUserValue, iSelectId, 
 
     const dynamicVarName = iAction[0].split('~')[0];
     dynamicVariables[dynamicVarName] = iUserValue;
-
+    console.log(`${dynamicVarName} = ${dynamicVariables[dynamicVarName]}`);
     const Appointment_ID = sessionMap[from];
     if (Appointment_ID) {
         if (dynamicVarName === 'Poc_name') {
             await updateAppointment('POC_ID', iSelectId, Appointment_ID);
-        } else if (dynamicVarName !== 'Department' && dynamicVarName !== 'Confirm_Status') {
+        } else if (dynamicVarName !== 'Department' && dynamicVarName !== 'Confirm_Status' && dynamicVarName !== 'Emergency_Reason') {
             await updateAppointment(iAction[0], iUserValue, Appointment_ID);
         }
     } else {
@@ -220,12 +216,17 @@ async function handleAction(iAction, iClientId, iMenuId, iUserValue, iSelectId, 
     } else if (iAction[1] === 'FETCH_AVAILABLE_TIMES_DIRECT') {
         return await getAvailableTimes(iClientId, iMenuId, iSelectId, iUserValue);
     } else if (iAction[1] === 'CONFIRM') {
-        const appointmentDetails = {
-            doctor: dynamicVariables.Poc_name,
-            date: dynamicVariables.Appointment_Date,
-            time: dynamicVariables.Appointment_Time
-        };
-        const confirmationMessage = `Your appointment details:\nDoctor: ${appointmentDetails.doctor}\nDate: ${appointmentDetails.date}\nTime: ${appointmentDetails.time}.`;
+        let confirmationMessage = await getTemplateMessage(iClientId, iAction[1]);
+
+        // Replace each placeholder with corresponding data
+        confirmationMessage = confirmationMessage.replace('[User_Name]', userData.User_Name || '');
+        confirmationMessage = confirmationMessage.replace('[User_Email]', userData.User_Email || '');
+        confirmationMessage = confirmationMessage.replace('[User_Location]', userData.User_Location || '');
+        confirmationMessage = confirmationMessage.replace('[Appointment_Type]', dynamicVariables['Appointment_Type'] || '');
+        confirmationMessage = confirmationMessage.replace('[Department]', dynamicVariables['Department'] || '');
+        confirmationMessage = confirmationMessage.replace('[POC]', dynamicVariables['Poc_name'] || '');
+        confirmationMessage = confirmationMessage.replace('[Appointment_Date]', dynamicVariables['Appointment_Date'] || '');
+        confirmationMessage = confirmationMessage.replace('[Appointment_Time]', dynamicVariables['Appointment_Time'] || '');
 
         // Send confirmation message to user
         await sendWhatsAppMessage(from, confirmationMessage);
@@ -233,19 +234,64 @@ async function handleAction(iAction, iClientId, iMenuId, iUserValue, iSelectId, 
         // Create confirmation options with unique placeholders
         const confirmationOptions = [
             { CLIENT_ID: iClientId, MENU_ID: iMenuId, ITEM_ID: 'Confirm', MENU_NAME: 'Confirm' },
-            { CLIENT_ID: iClientId, MENU_ID: iMenuId, ITEM_ID: 'Cancel', MENU_NAME: 'Cancel' }
+            { CLIENT_ID: iClientId, MENU_ID: iMenuId, ITEM_ID: 'Cancel_Appointment_Request', MENU_NAME: 'Cancel Request' }
         ];
-
         // Return formatted list of options
         return confirmationOptions;
-    } // Inside handleAction, add the following:
-    else if (iAction[1] === 'FINALIZE') {
+    } else if (iAction[1] === 'FINALIZE') {
         if (iUserValue === 'Confirm') {
             await updateAppointment('Status', 'Confirmed', Appointment_ID);
             await updateAvailableSlots(dynamicVariables);
-            await sendWhatsAppMessage(from, "Your appointment has been successfully confirmed. Thank you!");
-        } else if (iUserValue === 'Cancel') {
-            await sendWhatsAppMessage(from, "Your appointment request has been canceled. You can start over if you'd like to make a new appointment.");
+            let finalizeMessage = await getTemplateMessage(iClientId, iAction[1]);
+            finalizeMessage = finalizeMessage.replace('[Appointment_ID]', Appointment_ID || '');
+            await sendWhatsAppMessage(from, finalizeMessage);
+        } else if (iUserValue === 'Cancel Request') {
+            let cancel_message = await getTemplateMessage(iClientId, iSelectId);
+            await sendWhatsAppMessage(from, cancel_message);
+        }
+        return null;
+    } else if (iAction[1] === 'CONFIRM_EMERGENCY') {
+        let confirmationMessage = await getTemplateMessage(iClientId, iAction[1]);
+
+        // Replace each placeholder with corresponding data
+        confirmationMessage = confirmationMessage.replace('[User_Name]', userData.User_Name || '');
+        confirmationMessage = confirmationMessage.replace('[User_Email]', userData.User_Email || '');
+        confirmationMessage = confirmationMessage.replace('[User_Location]', userData.User_Location || '');
+        confirmationMessage = confirmationMessage.replace('[Appointment_Type]', dynamicVariables['Appointment_Type'] || '');
+        confirmationMessage = confirmationMessage.replace('[Emergency_Reason]', dynamicVariables['Emergency_Reason'] || '');
+
+        // Send confirmation message to user
+        await sendWhatsAppMessage(from, confirmationMessage);
+
+        // Create confirmation options with unique placeholders
+        const confirmationOptions = [
+            { CLIENT_ID: iClientId, MENU_ID: iMenuId, ITEM_ID: 'Confirm', MENU_NAME: 'Confirm' },
+            { CLIENT_ID: iClientId, MENU_ID: iMenuId, ITEM_ID: 'Cancel_Appointment_Request', MENU_NAME: 'Cancel Request' }
+        ];
+        // Return formatted list of options
+        return confirmationOptions;
+    } else if (iAction[1] === 'FINALIZE_EMERGENCY') {
+        if (iUserValue === 'Confirm') {
+            await updateAppointment('Status', 'Confirmed', Appointment_ID);
+            let finalizeMessage = await getTemplateMessage(iClientId, iAction[1]);
+            await sendWhatsAppMessage(from, finalizeMessage);
+        } else if (iUserValue === 'Cancel Request') {
+            let cancel_message = await getTemplateMessage(iClientId, iSelectId);
+            await sendWhatsAppMessage(from, cancel_message);
+        }
+        return null;
+    } else if (iAction[1] === 'FINALIZE_TELE') {
+        if (iUserValue === 'Confirm') {
+            await updateAppointment('Status', 'Confirmed', Appointment_ID);
+            await updateAvailableSlots(dynamicVariables);
+            let finalizeMessage = await getTemplateMessage(iClientId, iAction[1]);
+            finalizeMessage = finalizeMessage.replace('[Appointment_ID]', Appointment_ID || '');
+            await sendWhatsAppMessage(from, finalizeMessage);
+            const meet_link = await getMeetLink(dynamicVariables['Poc_ID']);
+            await sendWhatsAppMessage(from, meet_link);
+        } else if (iUserValue === 'Cancel Request') {
+            let cancel_message = await getTemplateMessage(iClientId, iSelectId);
+            await sendWhatsAppMessage(from, cancel_message);
         }
         return null;
     } else {
