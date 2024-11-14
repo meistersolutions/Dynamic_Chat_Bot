@@ -41,12 +41,6 @@ async function getMainMenu(clientId, parentMenuID) {
             Menu_Name AS MENU_NAME, 
             Header_Message AS HEADER_MESSAGE,
             Action as ACTION
-        SELECT 
-            Client_ID as CLIENT_ID,
-            Menu_ID as MENU_ID,
-            Menu_Name AS MENU_NAME, 
-            Header_Message AS HEADER_MESSAGE,
-            Action as ACTION
         FROM menu 
         WHERE Client_ID = ? AND Language = 'ENG' AND Parent_Menu_ID = ?
         ORDER BY Display_Order;
@@ -118,18 +112,31 @@ function getPocFromPoc(iClientId, iMenuId, iKey) {
     });
 }
 
-// Function to get available dates for a doctor  
 function getAvailableDates(iClientId, iMenuId, iKey) {
     return new Promise((resolve, reject) => {
         console.log(`getAvailableDates: iClientId:${iClientId} ,iMenuId: ${iMenuId}, iKey: ${iKey}`);
-        const query = `SELECT DISTINCT
-                            ? as CLIENT_ID,
-                            ? MENU_ID,
-                            CONCAT(POC_ID,'-',DATE_FORMAT(Schedule_Date,'%Y-%m-%d')) as ITEM_ID,
-                            DATE_FORMAT(Schedule_Date,'%Y-%m-%d') as MENU_NAME 
-                        FROM poc_available_slots 
-                        WHERE   POC_ID= ?
-                        LIMIT 10`;
+        const query = `
+            SELECT DISTINCT
+                ? AS CLIENT_ID,
+                ? AS MENU_ID,
+                CONCAT(POC_ID, '-', DATE_FORMAT(Schedule_Date, '%Y-%m-%d')) AS ITEM_ID,
+                DATE_FORMAT(Schedule_Date, '%Y-%m-%d') AS MENU_NAME,
+                Schedule_Date
+            FROM poc_available_slots
+            WHERE POC_ID = ?
+                AND Schedule_Date >= CURDATE()
+                AND appointments_per_slot > 0
+                AND EXISTS (
+                    SELECT 1 
+                    FROM poc_available_slots AS slots
+                    WHERE slots.POC_ID = poc_available_slots.POC_ID 
+                        AND slots.Schedule_Date = poc_available_slots.Schedule_Date 
+                        AND (slots.Schedule_Date > CURDATE() OR (slots.Schedule_Date = CURDATE() AND slots.Start_Time >= CURTIME()))
+                )
+            ORDER BY Schedule_Date
+            LIMIT 10
+        `;
+
         const connection = getConnection();
 
         connection.execute(query, [iClientId, iMenuId, iKey], (err, results) => {
@@ -137,40 +144,51 @@ function getAvailableDates(iClientId, iMenuId, iKey) {
                 console.error('Error fetching available dates:', err.message);
                 reject(err);
             } else {
-                // Extract available dates from the results and format them  
-                //const availableDates = results.map(row => moment(row.Schedule_Date).format('YYYY-MM-DD'));  
-                resolve(results); // Return available dates  
+                // Return only available dates, excluding Schedule_Date from the final output if needed
+                const formattedResults = results.map(({ CLIENT_ID, MENU_ID, ITEM_ID, MENU_NAME }) => ({
+                    CLIENT_ID,
+                    MENU_ID,
+                    ITEM_ID,
+                    MENU_NAME
+                }));
+                resolve(formattedResults);
             }
         });
     });
 }
 
+
 function getAvailableTimes(iClientId, iMenuId, iKey, iValue) {
     return new Promise((resolve, reject) => {
-        console.log(`getAvailableTimes: iClientId:${iClientId} ,iMenuId: ${iMenuId}, iKey: ${iKey}`);
-        const query = `SELECT DISTINCT
-                            ? as CLIENT_ID,
-                            ? MENU_ID,
-                            CONCAT(POC_ID,'-',DATE_FORMAT(Schedule_Date,'%Y-%m-%d'),'-',Start_Time) as ITEM_ID,
-                            Start_Time as MENU_NAME 
-                        FROM poc_available_slots 
-                        WHERE   POC_ID= ?
-                        and Schedule_Date = STR_TO_DATE(?, '%Y-%m-%d')
-                        LIMIT 10`;
+        console.log(`getAvailableTimes: iClientId:${iClientId} ,iMenuId: ${iMenuId}, iKey: ${iKey}, iValue: ${iValue}`);
+        const query = `
+            SELECT DISTINCT
+                ? AS CLIENT_ID,
+                ? AS MENU_ID,
+                CONCAT(POC_ID, '-', DATE_FORMAT(Schedule_Date, '%Y-%m-%d'), '-', Start_Time) AS ITEM_ID,
+                Start_Time AS MENU_NAME
+            FROM poc_available_slots
+            WHERE POC_ID = ?
+                AND Schedule_Date = STR_TO_DATE(?, '%Y-%m-%d')
+                AND appointments_per_slot > 0
+                AND (Schedule_Date > CURDATE() OR (Schedule_Date = CURDATE() AND Start_Time >= CURTIME()))
+            ORDER BY Start_Time
+            LIMIT 10
+        `;
+
         const connection = getConnection();
 
         connection.execute(query, [iClientId, iMenuId, iKey, iValue], (err, results) => {
             if (err) {
-                console.error('Error fetching available dates:', err.message);
+                console.error('Error fetching available times:', err.message);
                 reject(err);
             } else {
-                // Extract available dates from the results and format them  
-                //const availableDates = results.map(row => moment(row.Schedule_Date).format('YYYY-MM-DD'));  
-                resolve(results); // Return available dates  
+                resolve(results); // Return only available times
             }
         });
     });
 }
+
 
 // Get user data by contact number
 function getUserData(userContact) {
@@ -219,5 +237,73 @@ async function updateUserField(userContact, field, value) {
     });
 }
 
+async function insertAppointment(clientId, userId) {
+    const query = 'INSERT INTO Appointments (Client_ID, User_ID, POC_ID, Appointment_Date, Appointment_Time, Appointment_Type, Status, Is_Active, JSON_DATA) VALUES (?,?,?,?,?,?,?,?,?)';
+    const connection = getConnection();
+    return new Promise((resolve, reject) => {
+        connection.execute(query, [clientId, userId, null, null, null, null, 'Pending', true, JSON.stringify({})], (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                const appointmentId = result.insertId;
+                resolve(appointmentId);
+            }
+        });
+    });
+}
 
-module.exports = { insertUserData, getUserData, updateUserField, getClientID, getWelcomeMessage, getMainMenu, getFromList, getPocFromPoc, getAvailableDates, getAvailableTimes };
+async function updateAppointment(column_name, value, appointmentId) {
+    const query = `UPDATE Appointments SET ${column_name} =? WHERE Appointment_ID =?`;
+    const connection = getConnection();
+    return new Promise((resolve, reject) => {
+        connection.execute(query, [value, appointmentId], (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(result);
+            }
+        });
+    });
+}
+
+const updateJsonData = (appointmentId, dynamicVarName, iUserValue) => {
+    return new Promise((resolve, reject) => {
+        const connection = getConnection();
+
+        // MySQL query to append new data to the JSON object directly
+        const updateQuery = `
+            UPDATE Appointments
+            SET JSON_DATA = JSON_SET(JSON_DATA, '$.${dynamicVarName}', ?)
+            WHERE Appointment_ID = ?
+        `;
+
+        // Execute the update query
+        connection.execute(updateQuery, [iUserValue, appointmentId], (err) => {
+            if (err) {
+                console.error('Error updating JSON data:', err.message);
+                reject(err);
+            } else {
+                console.log('JSON data updated successfully');
+                resolve();
+            }
+        });
+    });
+};
+
+
+async function updateAvailableSlots(dynamicVariables) {
+    const query = `
+        UPDATE POC_Available_Slots
+        SET appointments_per_slot = appointments_per_slot - 1
+        WHERE POC_ID = ? AND Schedule_Date = ? AND Start_Time = ? AND appointments_per_slot > 0;
+    `;
+    // Extract values from dynamicVariables
+    const doctorId = dynamicVariables.Poc_ID;
+    const date = dynamicVariables.Appointment_Date;
+    const time = dynamicVariables.Appointment_Time;
+
+    const connection = getConnection();
+    await connection.execute(query, [doctorId, date, time]);
+}
+
+module.exports = { insertAppointment, updateAppointment, updateJsonData, updateAvailableSlots, insertUserData, getUserData, updateUserField, getClientID, getWelcomeMessage, getMainMenu, getFromList, getPocFromPoc, getAvailableDates, getAvailableTimes };
