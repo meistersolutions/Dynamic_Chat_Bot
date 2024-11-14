@@ -111,11 +111,6 @@ app.post('/webhook', async(req, res) => {
                         const menuNames = mainMenuItems.map(item => ({ id: item.CLIENT_ID + '~' + item.MENU_ID + '~' + item.MENU_ID, title: item.MENU_NAME }));
                         await sendInteractiveMessage(from, headerMessage, menuNames);
 
-                        /*// Initialize Appointment_ID right after collecting full user data
-                        console.log(`user Id: ${userData.User_ID}`);
-                        Appointment_ID = await insertAppointment(clientId, userData.User_ID);
-                        console.log(`Appointment id: ${Appointment_ID}`);*/
-
                         // Initialize Appointment_ID right after collecting full user data
                         console.log(`user Id: ${userData.User_ID}`);
                         const Appointment_ID = await insertAppointment(clientId, userData.User_ID);
@@ -159,13 +154,15 @@ app.post('/webhook', async(req, res) => {
                         const actionMenuNames = await handleAction(mainMenuItems[0].ACTION.split('~'), clientId, mainMenuItems[0].MENU_ID, title, selectId, from)
 
                         // Retrieve the first menu item's HEADER_MESSAGE (assuming only one HEADER_MESSAGE for the main menu)
-                        const headerMessage = mainMenuItems[0].HEADER_MESSAGE;
+                        let headerMessage = mainMenuItems[0].HEADER_MESSAGE;
                         if (actionMenuNames !== null) {
                             // Extract MENU_NAME items for interactive message
                             const menuNames = actionMenuNames.map(item => ({ id: item.CLIENT_ID + '~' + item.MENU_ID + '~' + item.ITEM_ID, title: item.MENU_NAME }));
                             await sendRadioButtonMessage(from, headerMessage, menuNames);
                         } else {
-                            const Appointment_ID = sessionMap[from];
+                            let appointment_id = sessionMap[from];
+                            // Replace the placeholder with the actual value
+                            headerMessage = headerMessage.replace("[Appointment_ID]", appointment_id);
                             await sendWhatsAppMessage(from, headerMessage);
                         }
                     } else {

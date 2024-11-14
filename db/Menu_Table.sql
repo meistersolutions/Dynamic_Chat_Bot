@@ -112,5 +112,4 @@ UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Poc_name~FETCH_AVAILABLE_DATES_DI
 UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Appointment_Date~FETCH_AVAILABLE_TIMES_DIRECT' WHERE (`Menu_ID` = '14');
 UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Appointment_Time~CONFIRM' WHERE (`Menu_ID` = '15');
 UPDATE `chatbotdynamic`.`menu` SET `Action` = 'Confirm_Status~FINALIZE' WHERE (`Menu_ID` = '16');
-UPDATE `chatbotdynamic`.`menu` SET `Header_Message` = 'Appointment confirmed.Your Appointment ID: ${Appointment_ID}' WHERE (`Menu_ID` = '16');
-
+UPDATE `chatbotdynamic`.`menu` SET `Header_Message` = 'Appointment confirmed.Your Appointment ID: [Appointment_ID]' WHERE (`Menu_ID` = '16');
