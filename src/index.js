@@ -213,6 +213,12 @@ async function handleAction(iAction, iClientId, iMenuId, iUserValue, iSelectId, 
     } else if (iAction[1] === 'FETCH_AVAILABLE_DATES_DIRECT') {
         dynamicVariables['Poc_ID'] = iSelectId;
         return await getAvailableDates(iClientId, iMenuId, iSelectId);
+    } else if (iAction[1] === 'FETCH_AVAILABLE_DATES_CHECKUP') {
+        let poc_details = await getPocFromPoc(iClientId, iMenuId, iUserValue);
+        poc_details = poc_details[0];
+        dynamicVariables['Poc_ID'] = poc_details.ITEM_ID;
+        console.log(`Poc_ID: ${dynamicVariables['Poc_ID']}`);
+        return await getAvailableDates(iClientId, iMenuId, dynamicVariables['Poc_ID']);
     } else if (iAction[1] === 'FETCH_AVAILABLE_TIMES_DIRECT') {
         return await getAvailableTimes(iClientId, iMenuId, iSelectId, iUserValue);
     } else if (iAction[1] === 'CONFIRM') {
@@ -294,6 +300,27 @@ async function handleAction(iAction, iClientId, iMenuId, iUserValue, iSelectId, 
             await sendWhatsAppMessage(from, cancel_message);
         }
         return null;
+    } else if (iAction[1] === 'CONFIRM_CHECKUP') {
+        let confirmationMessage = await getTemplateMessage(iClientId, iAction[1]);
+
+        // Replace each placeholder with corresponding data
+        confirmationMessage = confirmationMessage.replace('[User_Name]', userData.User_Name || '');
+        confirmationMessage = confirmationMessage.replace('[User_Email]', userData.User_Email || '');
+        confirmationMessage = confirmationMessage.replace('[User_Location]', userData.User_Location || '');
+        confirmationMessage = confirmationMessage.replace('[Appointment_Type]', dynamicVariables['Appointment_Type'] || '');
+        confirmationMessage = confirmationMessage.replace('[Appointment_Date]', dynamicVariables['Appointment_Date'] || '');
+        confirmationMessage = confirmationMessage.replace('[Appointment_Time]', dynamicVariables['Appointment_Time'] || '');
+
+        // Send confirmation message to user
+        await sendWhatsAppMessage(from, confirmationMessage);
+
+        // Create confirmation options with unique placeholders
+        const confirmationOptions = [
+            { CLIENT_ID: iClientId, MENU_ID: iMenuId, ITEM_ID: 'Confirm', MENU_NAME: 'Confirm' },
+            { CLIENT_ID: iClientId, MENU_ID: iMenuId, ITEM_ID: 'Cancel_Appointment_Request', MENU_NAME: 'Cancel Request' }
+        ];
+        // Return formatted list of options
+        return confirmationOptions;
     } else {
         console.log('handleAction:inside Else');
     }

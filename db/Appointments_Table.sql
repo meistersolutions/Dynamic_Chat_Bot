@@ -15,6 +15,9 @@ CREATE TABLE Appointments (
     FOREIGN KEY (POC_ID) REFERENCES POC(POC_ID)
 );
 
+ALTER TABLE Appointments 
+MODIFY Appointment_Type ENUM('Tele Consultation', 'Direct Consultation', 'Emergency', 'Master Health Checkup') DEFAULT 'Direct Consultation';
+
 truncate table appointments;
 drop table appointments;
 use chatbotdynamic;

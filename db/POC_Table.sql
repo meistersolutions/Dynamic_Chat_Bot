@@ -21,3 +21,7 @@ alter table POC add column Meet_Link varchar(100);
 UPDATE `chatbotdynamic`.`poc` SET `Meet_Link` = 'https://meet.google.com/fqa-ibje-mpn' WHERE (`POC_ID` = '1');
 UPDATE `chatbotdynamic`.`poc` SET `Meet_Link` = 'https://meet.google.com/fqa-ibje-mpn' WHERE (`POC_ID` = '2');
 UPDATE `chatbotdynamic`.`poc` SET `Meet_Link` = 'https://meet.google.com/fqa-ibje-mpn' WHERE (`POC_ID` = '3');
+
+INSERT INTO POC (Client_ID, Department_ID, POC_Name, Specialization, Contact_Number, Email)
+VALUES
+(1, 8, 'Master Health Checkup', 'Master Health Checkup', '+917299817996', 'harishradhakrishnan2001@gmail.com');
