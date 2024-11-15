@@ -33,6 +33,7 @@ async function sendWhatsAppMessage(to, message) {
 
 // Function to send a button message (interactive message)
 async function sendInteractiveMessage(to, bodyText, buttons) {
+    const mediaId = await uploadImage();
     // Ensure there's at least one button
     if (buttons.length === 0) {
         console.error('No buttons provided for interactive message.');
@@ -53,6 +54,12 @@ async function sendInteractiveMessage(to, bodyText, buttons) {
         type: 'interactive',
         interactive: {
             type: 'button',
+            header: {
+                type: 'image',
+                image: {
+                    id: mediaId
+                }
+            },
             body: {
                 text: bodyText
             },
@@ -76,12 +83,36 @@ async function sendInteractiveMessage(to, bodyText, buttons) {
     }
 }
 
+const fs = require('fs');
+const FormData = require('form-data');
+
+
+async function uploadImage() {
+    const url = `https://graph.facebook.com/v13.0/${process.env.PHONE_NUMBER_ID}/media`;
+    const headers = {
+        'Authorization': `Bearer ${process.env.WHATSAPP_TOKEN}`
+    };
+
+    const formData = new FormData();
+    formData.append('file', fs.createReadStream('E:/WHATSAPP CHAT BOT/DYNAMIC CHAT BOT/src/images/option.png')); // Local path
+    formData.append('type', 'image/png'); // Specify the MIME type
+    formData.append('messaging_product', 'whatsapp'); // Add the missing parameter
+
+    try {
+        const response = await axios.post(url, formData, { headers: {...headers, ...formData.getHeaders() } });
+        console.log('Image uploaded successfully:', response.data);
+        return response.data.id; // This is the media ID
+    } catch (error) {
+        console.error('Error uploading image:', error.response ? error.response.data : error.message);
+    }
+}
 
 // Function to send a radio button message (list message)
 async function sendRadioButtonMessage(to, headerText, options) {
+
     const url = `https://graph.facebook.com/v13.0/${process.env.PHONE_NUMBER_ID}/messages`;
     const headers = {
-        'Authorization': `Bearer ${process.env.WHATSAPP_TOKEN}`, // Use the correct token
+        'Authorization': `Bearer ${process.env.WHATSAPP_TOKEN}`,
         'Content-Type': 'application/json'
     };
 
@@ -96,12 +127,13 @@ async function sendRadioButtonMessage(to, headerText, options) {
         type: 'interactive',
         interactive: {
             type: 'list',
+
             header: {
                 type: 'text',
-                text: headerText
+                text: " "
             },
             body: {
-                text: "We’re here to help! Please choose an option below. 🌟"
+                text: headerText || "Choose an option below"
             },
             action: {
                 button: 'Select',
@@ -123,6 +155,7 @@ async function sendRadioButtonMessage(to, headerText, options) {
         console.error('Error sending radio button message:', error.response ? error.response.data : error.message);
     }
 }
+
 
 // Exporting functions
 module.exports = {
