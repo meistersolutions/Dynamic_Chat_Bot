@@ -3,7 +3,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const { getMeetLink, getTemplateMessage, insertAppointment, updateAppointment, updateJsonData, updateAvailableSlots, getClientID, getWelcomeMessage, getMainMenu, getFromList, insertUserData, getUserData, updateUserField, getPocFromPoc, getAvailableDates, getAvailableTimes } = require('./dbController');
 const { connectDB } = require('./db');
-const { sendWhatsAppMessage, sendInteractiveMessage, sendRadioButtonMessage } = require('./utils');
+const { sendWhatsAppMessage, sendInteractiveMessage, sendRadioButtonMessage, sendBackButtonMessage } = require('./utils');
 const { isValidEmail, isValidPhoneNumber } = require('./validate');
 
 dotenv.config();
@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
     res.send('Server is running! Welcome to the Meister Solutions.');
 });
 
-const sessionMap = {};
+
 let userData;
 
 app.get('/webhook', (req, res) => {
@@ -33,13 +33,8 @@ app.get('/webhook', (req, res) => {
     }
 });
 
-
-//let Appointment_ID; //GLOBAL DECLARATION
 app.post('/webhook', async(req, res) => {
     const body = req.body;
-
-    // console.log(`webhook received: ${JSON.stringify(body, null, 2)}`);
-    //console.log(JSON.stringify(body));
     let title = [];
     let Response_id = [];
 
@@ -79,18 +74,7 @@ app.post('/webhook', async(req, res) => {
                             // Invalid email format - prompt user to enter a valid email
                             await sendWhatsAppMessage(from, "The email you entered is invalid. Please enter a valid email address:");
                         }
-                    }
-                    /*  else if (!userData.User_Contact) {
-                          // Validate phone number before updating
-                          if (isValidPhoneNumber(messageBody)) {
-                              await updateUserField(from, 'User_Contact', messageBody);
-                              await sendWhatsAppMessage(from, "Thank you! Please share your location:");
-                          } else {
-                              // Invalid phone number format - prompt user to enter a valid phone number
-                              await sendWhatsAppMessage(from, "The phone number you entered is invalid. Please enter a valid phone number:");
-                          }
-                      } */
-                    else if (!userData.User_Location) {
+                    } else if (!userData.User_Location) {
                         await updateUserField(from, 'User_Location', messageBody);
                         await sendWhatsAppMessage(from, "Thank you for completing your details.");
 
@@ -100,7 +84,7 @@ app.post('/webhook', async(req, res) => {
 
                         const mainMenuItems = await getMainMenu(clientId, 0);
                         const headerMessage = mainMenuItems[0].HEADER_MESSAGE;
-                        const menuNames = mainMenuItems.map(item => ({ id: item.CLIENT_ID + '~' + item.MENU_ID + '~' + item.MENU_ID, title: item.MENU_NAME }));
+                        const menuNames = mainMenuItems.map(item => ({ id: item.CLIENT_ID + '~' + item.MENU_ID + '~' + item.MENU_ID + '|' + item.CLIENT_ID + '~' + item.MENU_ID + '~' + item.MENU_ID, title: item.MENU_NAME }));
                         await sendInteractiveMessage(from, headerMessage, menuNames);
                     } else {
                         // Fully registered user - display main menu
@@ -109,15 +93,14 @@ app.post('/webhook', async(req, res) => {
 
                         const mainMenuItems = await getMainMenu(clientId, 0);
                         const headerMessage = mainMenuItems[0].HEADER_MESSAGE;
-                        const menuNames = mainMenuItems.map(item => ({ id: item.CLIENT_ID + '~' + item.MENU_ID + '~' + item.MENU_ID, title: item.MENU_NAME }));
+                        const menuNames = mainMenuItems.map(item => ({ id: item.CLIENT_ID + '~' + item.MENU_ID + '~' + item.MENU_ID + '|' + item.CLIENT_ID + '~' + item.MENU_ID + '~' + item.MENU_ID, title: item.MENU_NAME }));
                         await sendInteractiveMessage(from, headerMessage, menuNames);
 
                         // Initialize Appointment_ID right after collecting full user data
                         console.log(`user Id: ${userData.User_ID}`);
-                        const Appointment_ID = await insertAppointment(clientId, userData.User_ID);
-                        sessionMap[from] = Appointment_ID;
-                        console.log(`Appointment id: ${Appointment_ID}`);
-
+                        /* const Appointment_ID = await insertAppointment(clientId, userData.User_ID);
+                         sessionMap[from] = Appointment_ID;
+                         console.log(`Appointment id: ${Appointment_ID}`); */
                     }
                 } else {
                     // New user - insert user record and ask for name
@@ -131,20 +114,27 @@ app.post('/webhook', async(req, res) => {
                     const interactiveType = message.interactive.type;
                     if (interactiveType === 'button_reply' && message.interactive.button_reply) {
                         title = message.interactive.button_reply.title;
-                        Response_id = message.interactive.button_reply.id.split('~');
+                        Response_id = message.interactive.button_reply.id.split('|');
                     } else if (interactiveType === 'list_reply' && message.interactive.list_reply) {
                         title = message.interactive.list_reply.title;
-                        Response_id = message.interactive.list_reply.id.split('~');
+                        Response_id = message.interactive.list_reply.id.split('|');
                     }
                 }
 
                 console.log(`Title: ${title} ID: ${Response_id}`);
-
+                previousId = Response_id[1];
+                Response_id = Response_id[0].split('~');
                 clientId = Response_id[0];
                 menuId = Response_id[1];
                 selectId = Response_id[2];
+                Appointment_ID = Response_id[3];
 
                 try {
+
+                    if (title.toLowerCase() === 'book appointment') {
+                        Appointment_ID = await insertAppointment(clientId, userData.User_ID);
+                        console.log(`Appointment id: ${Appointment_ID}`);
+                    }
                     // Get the main menu for initial interaction
                     const mainMenuItems = await getMainMenu(clientId, menuId);
 
@@ -152,22 +142,32 @@ app.post('/webhook', async(req, res) => {
                         sendWhatsAppMessage(from, "No menu options available.");
                         return;
                     } else if (mainMenuItems.length === 1 && mainMenuItems[0].ACTION) {
-                        const actionMenuNames = await handleAction(mainMenuItems[0].ACTION.split('~'), clientId, mainMenuItems[0].MENU_ID, title, selectId, from)
+                        const actionMenuNames = await handleAction(mainMenuItems[0].ACTION.split('~'), clientId, mainMenuItems[0].MENU_ID, title, selectId, from, Appointment_ID)
 
                         // Retrieve the first menu item's HEADER_MESSAGE (assuming only one HEADER_MESSAGE for the main menu)
                         let headerMessage = mainMenuItems[0].HEADER_MESSAGE;
                         if (actionMenuNames !== null) {
                             // Extract MENU_NAME items for interactive message
-                            const menuNames = actionMenuNames.map(item => ({ id: item.CLIENT_ID + '~' + item.MENU_ID + '~' + item.ITEM_ID, title: item.MENU_NAME }));
+                            const menuNames = actionMenuNames.map(item => ({ id: item.CLIENT_ID + '~' + item.MENU_ID + '~' + item.ITEM_ID + '~' + Appointment_ID + '|' + clientId + '~' + menuId + '~' + selectId, title: item.MENU_NAME }));
                             await sendRadioButtonMessage(from, headerMessage, menuNames);
+                            const backmessage = [{
+                                id: previousId + '~' + Appointment_ID + '|' + mainMenuItems[0].CLIENT_ID + '~' + mainMenuItems[0].MENU_ID + '~' + mainMenuItems[0].ITEM_ID,
+                                title: 'Back'
+                            }];
+                            await sendBackButtonMessage(from, backmessage);
                         }
                     } else {
 
                         // Retrieve the first menu item's HEADER_MESSAGE (assuming only one HEADER_MESSAGE for the main menu)
                         const headerMessage = mainMenuItems[0].HEADER_MESSAGE;
                         // Extract MENU_NAME items for interactive message
-                        const menuNames = mainMenuItems.map(item => ({ id: item.CLIENT_ID + '~' + item.MENU_ID + '~' + item.ITEM_ID, title: item.MENU_NAME }));
+                        const menuNames = mainMenuItems.map(item => ({ id: item.CLIENT_ID + '~' + item.MENU_ID + '~' + item.ITEM_ID + '~' + Appointment_ID + '|' + clientId + '~' + menuId + '~' + selectId, title: item.MENU_NAME }));
                         await sendRadioButtonMessage(from, headerMessage, menuNames);
+                        const backmessage = [{
+                            id: previousId + '~' + Appointment_ID + '|' + mainMenuItems[0].CLIENT_ID + '~' + mainMenuItems[0].MENU_ID + '~' + mainMenuItems[0].ITEM_ID,
+                            title: 'Back'
+                        }];
+                        await sendBackButtonMessage(from, backmessage);
                     }
 
                 } catch (error) {
@@ -186,41 +186,46 @@ app.post('/webhook', async(req, res) => {
 
 // This will be used to store dynamic variables
 let dynamicVariables = {};
-async function handleAction(iAction, iClientId, iMenuId, iUserValue, iSelectId, from) {
+async function handleAction(iAction, iClientId, iMenuId, iUserValue, iSelectId, from, Appointment_ID) {
     const iLang = 'ENG';
-    console.log(`handleAction: iAction:${iAction} ,iClientID:${iClientId} ,iMenuId:${iMenuId}, iUserValue:${iUserValue} iSelectId: ${iSelectId} appointment_id: ${sessionMap[from]}`);
-
-    const dynamicVarName = iAction[0].split('~')[0];
-    dynamicVariables[dynamicVarName] = iUserValue;
-    console.log(`${dynamicVarName} = ${dynamicVariables[dynamicVarName]}`);
-    const Appointment_ID = sessionMap[from];
+    console.log(`handleAction: iAction:${iAction} ,iClientID:${iClientId} ,iMenuId:${iMenuId}, iUserValue:${iUserValue} iSelectId: ${iSelectId} appointment_id: ${Appointment_ID}`);
+    let dynamicVarName;
+    if (iUserValue != 'Back') {
+        dynamicVarName = iAction[0].split('~')[0];
+        dynamicVariables[dynamicVarName] = iUserValue;
+        console.log(`${dynamicVarName} = ${dynamicVariables[dynamicVarName]}`);
+    } else {
+        dynamicVarName = iAction[0].split('~')[0];
+        dynamicVariables[dynamicVarName] = dynamicVariables[dynamicVarName];
+        console.log(`back : ${dynamicVarName} = ${dynamicVariables[dynamicVarName]}`);
+    }
     if (Appointment_ID) {
         if (dynamicVarName === 'Poc_name') {
             await updateAppointment('POC_ID', iSelectId, Appointment_ID);
         } else if (dynamicVarName !== 'Department' && dynamicVarName !== 'Confirm_Status' && dynamicVarName !== 'Emergency_Reason') {
-            await updateAppointment(iAction[0], iUserValue, Appointment_ID);
+            await updateAppointment(iAction[0], dynamicVariables[dynamicVarName], Appointment_ID);
         }
     } else {
         console.log("Error: Appointment_ID is undefined when trying to update the appointment.");
     }
 
-    await updateJsonData(Appointment_ID, dynamicVarName, iUserValue);
+    await updateJsonData(Appointment_ID, dynamicVarName, dynamicVariables[dynamicVarName]);
 
     if (iAction[1] === 'LIST') {
         return await getFromList(iClientId, iMenuId, iAction[2], iLang);
     } else if (iAction[1] === 'POC') {
-        return await getPocFromPoc(iClientId, iMenuId, iUserValue);
+        return await getPocFromPoc(iClientId, iMenuId, dynamicVariables['Department']);
     } else if (iAction[1] === 'FETCH_AVAILABLE_DATES_DIRECT') {
         dynamicVariables['Poc_ID'] = iSelectId;
         return await getAvailableDates(iClientId, iMenuId, iSelectId);
     } else if (iAction[1] === 'FETCH_AVAILABLE_DATES_CHECKUP') {
-        let poc_details = await getPocFromPoc(iClientId, iMenuId, iUserValue);
+        let poc_details = await getPocFromPoc(iClientId, iMenuId, dynamicVariables['Department']);
         poc_details = poc_details[0];
         dynamicVariables['Poc_ID'] = poc_details.ITEM_ID;
         console.log(`Poc_ID: ${dynamicVariables['Poc_ID']}`);
         return await getAvailableDates(iClientId, iMenuId, dynamicVariables['Poc_ID']);
     } else if (iAction[1] === 'FETCH_AVAILABLE_TIMES_DIRECT') {
-        return await getAvailableTimes(iClientId, iMenuId, iSelectId, iUserValue);
+        return await getAvailableTimes(iClientId, iMenuId, iSelectId, dynamicVariables['Appointment_Date']);
     } else if (iAction[1] === 'CONFIRM') {
         let confirmationMessage = await getTemplateMessage(iClientId, iAction[1]);
 
